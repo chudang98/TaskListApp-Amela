@@ -1,21 +1,8 @@
 import App from './app'
-
-import * as bodyParser from 'body-parser'
 // import loggerMiddleware from './middleware/logger'
 
+var port:number = 3000;
 
-const app = new App({
-    port: 5000,
-    routers: [
-        // new HomeController(),
-        // new PostsController()
-    ],
-    middleWares: [
-        bodyParser.json(),
-        bodyParser.urlencoded({ extended: true }),
-        // loggerMiddleware
-    ],
-
+App.listen(port, () => {
+  console.log(`App listening on the http://localhost:${port}`);
 })
-
-app.listen()

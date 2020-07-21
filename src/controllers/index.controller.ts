@@ -1,7 +1,11 @@
+import { Request, Response } from 'express'
+
 module.exports = {
-  indexController
+    indexController,
 };
 
-async function indexController(req, res){
-
+async function indexController(req: Request, res: Response){
+  return res.json({
+    status: 'success',
+  })
 }
