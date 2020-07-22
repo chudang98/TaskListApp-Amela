@@ -1,9 +1,10 @@
 import { Request, Response } from 'express'
 import * as fs from 'fs';
+const { v4: uuidv4 } = require('uuid');
 
 var fileName = 'data.json';
 
-export async function indexController(req: Request, res: Response){
+export async function index(req: Request, res: Response){
   var data = await _readFile();
   var result:any = [];
   
@@ -15,40 +16,52 @@ export async function indexController(req: Request, res: Response){
     });
   };
   
-  return res.render('home', {
-    tasks: result,
-  });
+  // return res.render('home', {                                                       
+  //   tasks: result,
+  // });
+  return res.json({
+    tasks: result
+  })
 }
 
 export async function addTask(req: Request, res: Response){
   var { name, note } = req.body;
-  await _writeFile({name, note, status:1})
+  await _writeFile({
+    id: uuidv4(),
+    name, 
+    note,
+    status: 1
+  });
   return res.redirect('/');
 }
 
 export async function updateTask(req: Request, res: Response){
-  var index:any = req.params.index;
+  var index: string = req.params.id;
   var newData =  {
     name: req.body.name,
     note: req.body.note,
     status: Number(req.body.status),
   };
-  _updateTask(Number(index), newData);
-  return res.redirect(`/detailTask/${Number(index)}`);
+  _updateTask(index, newData);
+  return res.redirect(`/task/${index}`);
 }
 
 export async function getTaskDetail(req: Request, res: Response){
-  var index:any = req.params.index;
-  var task = await _getTaskByIndex(Number(index));
-  return res.render('detail', {
-    task,
-    index: Number(index),
-  })
+  var index:string = req.params.id;
+  console.log(index);
+  var task = await _getTaskByIndex(index);
+  console.log(task);
+  return res.json({
+    id: task.id,
+    name: task.name,
+    note: task.note,
+    status: await _converStatusToString(task.status)
+  });
 }
 
 export async function deleteTask(req: Request, res: Response){
-  var index = req.params.index;
-  _deleteTask(Number(index));
+  var id: string = req.params.index;
+  _deleteTask(id);
   return res.redirect('/');
 }
 
@@ -62,7 +75,12 @@ async function _readFile(){
   var data = await fs.readFileSync(fileName).toString();
   if(!data)
     return [];
-  return JSON.parse(data).data;
+  return JSON.parse(data).data as { 
+    id: string,
+    name: string,
+    note: string,
+    status: number,
+  }[];
 }
 
 async function _converStatusToString(idStatus: number){
@@ -94,19 +112,26 @@ async function _convertStringStatusToNumber(status: string){
 }
 
 // index start from zero
-async function _getTaskByIndex(index: number){
-  var oldData = await _readFile();
-  return oldData[index];
+async function _getTaskByIndex(id: string){
+  var data = await _readFile();
+  var result = await data.find(ele => ele.id == id);
+  return result;
 }
 
-async function _updateTask(index:number, data: any){
+async function _updateTask(id:string, data: any){
   var oldData = await _readFile();
-  oldData[index] = data;
+  var index:number = await oldData.findIndex((obj => obj.id == id));
+  oldData[index].name = data.name;
+  oldData[index].note = data.note;
+  oldData[index].status = data.status;
   await fs.writeFileSync(fileName, JSON.stringify({ data: oldData }));
 }
 
-async function _deleteTask(index:number){
+async function _deleteTask(id:string){
   var oldData = await _readFile();
-  oldData.splice(index, 1);
+  var index:number = await oldData.findIndex((obj => obj.id == id));
+  console.log(index);
+  if(index >= 0)
+    oldData.splice(index, 1);
   await fs.writeFileSync(fileName, JSON.stringify({ data: oldData }));
 }

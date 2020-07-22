@@ -1,18 +1,21 @@
-import { Router, Request, Response } from 'express'
+import { Router } from 'express'
+
 import * as controller from '../controllers/index.controller'
+import * as auth from '../middlewares/auth.middleware';
 
 var router = Router();
+
+router.use(auth.isLogined);
+
 router.route('/')
-  .get(controller.indexController)
+  .get(controller.index);
 
 router.route('/addTask')
-  .post(controller.addTask)
+  .post(controller.addTask);
 
-router.route('/detailTask/:index')
+router.route('/task/:id')
   .get(controller.getTaskDetail)
-  .post(controller.updateTask)
-
-router.route('/deleteTask/:index')
-  .get(controller.deleteTask);
+  .put(controller.updateTask)
+  .delete(controller.deleteTask);
 
 export default router;
